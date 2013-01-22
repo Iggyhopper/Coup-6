@@ -1,0 +1,6 @@
+// ==UserScript==
+// @name        Coup'd Bungie
+// @namespace   http://iggyhopper.strangled.net/
+// @include     http*://*.bungie.net/*
+// @version     __VERSION__
+// ==/UserScript==
