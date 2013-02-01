@@ -1,6 +1,8 @@
 // ==UserScript==
 // @name        Coup'd Bungie
+// @description Personalize your bungie.net experience.
 // @namespace   http://iggyhopper.strangled.net/
-// @include     http*://*.bungie.net/*
+// @include     http://*.bungie.net/*
+// @include     https://*.bungie.net/*
 // @version     __VERSION__
 // ==/UserScript==

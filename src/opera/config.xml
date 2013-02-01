@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" id="http://iggyhopper.strangled.net/gm/cdb" version="6.0">
+	<name>Coup'd Bungie</name>
+	<description>Personalize your bungie.net experience.</description>
+    <author>Iggyhopper</author>
+    <access origin="http://www.bungie.net" subdomains="true"/>
+    <access origin="https://www.bungie.net" subdomains="true"/>
+</widget>

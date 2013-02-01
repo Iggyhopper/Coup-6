@@ -1,3 +1,53 @@
+// ==UserScript==
+// @include     http*://*.bungie.net/*
+// ==/UserScript==
+window.addEventListener('DOMContentLoaded', function() {
+
+function wrapper() { if (window.viewModels && !window.viewModels.myFollowedGroupsModelIsLoaded()) setTimeout(wrapper, 100); else {
+var XT = (function()
+{
+    // package
+    var api = {};
+    
+    // private
+    var prefix = '';
+    
+    // public
+    api.get = function(name, defval)
+    {
+        var result = JSON.parse(localStorage.getItem(prefix + name));
+        return result !== null ? result : defval;
+    };
+    
+    api.getAll = function(asObject)
+    {
+        var result = asObject ? {} : [];
+        for (var key in localStorage)
+            if (key.substr(0, prefix.length) === prefix)
+                if (asObject)
+                    result[key] = api.get(key.substr(prefix.length));
+                else
+                    result.push({key: key, value: api.get(key.substr(prefix.length))});
+        return result;
+    };
+    
+    api.init = function(name)
+    {
+        prefix = name + '.';
+    };
+    
+    api.remove = function(name)
+    {
+        localStorage.removeItem(name);
+    };
+    
+    api.set = function(name, value)
+    {
+        localStorage.setItem(prefix + name, JSON.stringify(value));
+    };
+    
+    return api;
+})();
 // unsafeWindow hack for chrome or opera
 // breaks unsafeWindow for firefox
 if (!window.XULElement)
@@ -104,3 +154,4 @@ function template(str, dat)
 }
 
 // bnet.forumService.GetTopicsPaged
+}} wrapper(); }, false);

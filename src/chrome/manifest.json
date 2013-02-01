@@ -1,0 +1,19 @@
+{
+    "name": "Coup d'Bungie",
+    "version": "__VERSION__",
+    "manifest_version": 2,
+    "description": "Personalize your bungie.net experience.",
+    "permissions": [
+        "http://*.bungie.net/*", "https://*.bungie.net/*"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "http://*.bungie.net/*", "https://*.bungie.net/*"
+            ],
+            "js": [
+                "xt.js", "main.js"
+            ]
+        }
+    ]
+}
