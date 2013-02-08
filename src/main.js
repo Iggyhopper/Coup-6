@@ -25,13 +25,21 @@ log('Hello, ' + (window.chrome ? 'Chrome' : window.opera ? 'Opera' : 'Firefox') 
 ('' + window.chrome + window.opera + window.XULElement).indexOf('[') / 9
 
 const VERSION = '6.0';
-const CACHE_FLUSH_THRESHOLD = 1000 * 60 * 60 * 24 * 3; // 3 days
+const CACHE_FLUSH_THRESHOLD = 1000 * 60 * 60 * 24 * 10; // 10 days
 
 var $ = unsafeWindow.$;
 var url = unsafeWindow.location.href;
 var isSignedIn = unsafeWindow.viewModels.loggedInUserModel().user.showActivity();
 
 XT.init('cdb');
+
+log('debug', {
+	jquery: !!$,
+	userModel: !!unsafeWindow.viewModels.loggedInUserModel,
+	groupModel: !!unsafeWindow.viewModels.onPageGroupModel,
+	native_groupId: unsafeWindow.groupId,
+	isSignedIn: isSignedIn
+})
 
 // Group Styling
 /*   
@@ -43,27 +51,51 @@ XT.init('cdb');
 if (isSignedIn && ~url.search(/\/groups\//i))
 {
     var now = Date.now();
-    var groupId = unsafeWindow.viewModels.onPageGroupModel().detail.groupId;
+    var groupId = (+unsafeWindow.viewModels.onPageGroupModel().detail.groupId || unsafeWindow.groupId) + '';
     var cacheKey = template('groups.{id}.style', {id: groupId});
     var cacheVal = XT.get(cacheKey, {});
+	var forumsCacheKey = template('groups.{id}.forums', {id: groupId});
+	var forumsCacheVal = XT.get(forumsCacheKey, []);
 	log({id: groupId, key: cacheKey, val: cacheVal});
     if (now - cacheVal.time < CACHE_FLUSH_THRESHOLD)
+	{
         $('head').append($('<style/>').attr('type', 'text/css').text(cacheVal.data));
+		forumsCacheVal && forumsCacheVal.length && doGroupCustomForums(forumsCacheVal);
+	}
     else
     {
-        log('cache flush; retrieving style');
-        unsafeWindow.bungieNetPlatform.forumService.GetTopicsPaged(0, 50, groupId, 0, 0, 32, '', function(tResponse)
-        {
-            unsafeWindow.bungieNetPlatform.forumService.GetPostAndParent((tResponse.results.filter(function(i) { return i.subject === 'CSS'; })[0] || 0).postId, function(data)
-            {
-                cacheVal.data = data && data.results[0].body.replace(/&quot;/g, function(m) { return {'&quot;': '"'}[m]; }).replace(/;/g, ' !important;') || null;
-                cacheVal.time = now;
-                XT.set(cacheKey, cacheVal);
-                $('head').append($('<style/>').attr('type', 'text/css').text(cacheVal.data));
-            }, function(err) { XT.set(cacheKey, {data: null, time: now}); });
-        }, function(err) { log(arguments); });
+        log('cache flush; retrieving style, custom forums');
+		doGroupCustomStyle(groupId, true);
     }
+	
+	$('<a class="btn_blue"/>')
+	.css('margin-right', 10).html('').text('Refresh Style')
+	.insertBefore('a.btn_createMessage, a.btn_gotoCreateMessage').click(function()
+	{
+		var $this = $(this);
+		doGroupCustomStyle(groupId, 2, function() {
+			$this.css({color: 'white', background: '#32CD32'}).attr('class', 'btn_gray');
+		}, function() {
+			$this.css({color: 'white', background: '#CD32CD'}).attr('class', 'btn_gray');
+		});
+	});
 }
+if ($('h1.post_title').text() === 'CSS')
+{
+	log('css thread detected');
+	$('head').append($('<style/>').attr('type', 'text/css').text($('div.body').text()));
+	XT.remove(template('groups.{id}.style', {id: unsafeWindow.groupId}));
+	if ($('input.isAnnouncement').length)
+	{
+		$('.btn_submitEdit').click(function()
+		{
+			log(template('groups.{id}.style', {id: unsafeWindow.viewModels.onPageGroupModel().detail.groupId}), 'deleted on edit');
+			XT.remove(template('groups.{id}.style', {id: unsafeWindow.viewModels.onPageGroupModel().detail.groupId}));
+		});
+	}
+}
+
+
 if (~url.search('user/edit'))
 {
     $('#AccountSettings > :first').clone().appendTo('#AccountSettings')
@@ -96,11 +128,51 @@ else if (~url.search('view/community/groups/admin'))
 	);
 }
 
+function doGroupCustomForums(tags, redo)
+{
+	redo && $('li.cdb.group_forum').remove();
+	var forums = tags.map(function(i) { return i.charAt(1).toUpperCase() + i.substr(2); });
+	var $li = $('li.group_forum.forum').find('span').text('All Topics').end();
+	var isOn = $li.hasClass('on');
+	$li.removeClass('on');
+	for (var i = 0, c = forums.length; i < c; ++i)
+	{
+		var $clone = $li.clone().addClass('cdb');
+		if (~url.search('tg=%23' + tags[i].substr(1)))
+			$clone.addClass('on');
+		$clone.children()[0].href += '&tg=' + tags[i].replace('#', '%23');
+		$clone.children().children().text(forums[i]);
+		$li.after($clone);
+	}
+	if (isOn && !~url.search('tg=%23'))
+		$li.addClass('on');
+}
+
+function doGroupCustomStyle(groupId, doForums, callback, errback)
+{
+	var cacheKey = template('groups.{id}.style', {id: groupId});
+	var cacheVal = {};
+	var forumsCacheKey = template('groups.{id}.forums', {id: groupId});
+	var forumsCacheVal = [];
+	unsafeWindow.bungieNetPlatform.forumService.GetTopicsPaged(0, 50, groupId, 0, 0, 32, '', function(tResponse)
+	{
+		unsafeWindow.bungieNetPlatform.forumService.GetPostAndParent((tResponse.results.filter(function(i) { return i.subject === 'CSS'; })[0] || 0).postId, function(data)
+		{
+			cacheVal.data = data && data.results[0].body.replace(/&quot;/g, function(m) { return {'&quot;': '"'}[m]; }).replace(/;/g, ' !important;') || null;
+			cacheVal.time = Date.now();
+			XT.set(cacheKey, cacheVal);
+			$('head').append($('<style/>').attr('type', 'text/css').text(cacheVal.data));
+			forumsCacheVal = data && data.results[0].tags || null;
+			XT.set(forumsCacheKey, forumsCacheVal);
+			doForums && doGroupCustomForums(forumsCacheVal, doForums === 2);
+			callback && callback();
+		}, function() { errback && errback(); XT.set(cacheKey, {data: null, time: now})});
+	}, function() { errback && errback(); XT.set(cacheKey, {data: null, time: now})});
+}
+
 function template(str, dat)
 {
     for (var prop in dat)
         str = str.replace(new RegExp('{' + prop + '}','g'), dat[prop]);
     return str;
 }
-
-// bnet.forumService.GetTopicsPaged

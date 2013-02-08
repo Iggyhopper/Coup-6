@@ -1,4 +1,4 @@
-VERSION = 6.0
+VERSION = 6.0.15
 
 all: firefox chrome opera
 
@@ -10,8 +10,12 @@ firefox:
 chrome:
 	mv src/chrome/manifest.json manifest.json
 	sed s/__VERSION__/$(VERSION)/ manifest.json > src/chrome/manifest.json
-	cp src/xt.js src/main.js src/chrome
+	cat src/firefox/header.js src/main.js src/firefox/footer.js > src/chrome/main.js
+	cp src/xt.js src/chrome/xt.js
 	chrome --pack-extension=$(CURDIR)/src/chrome --pack-extension-key=$(CURDIR)/src/coup-6.pem
+	cd src/chrome & ; \
+	zip -r ../../bin/chrome/coup_d_bungie.zip .
+	cd ../..
 	cp manifest.json src/chrome/manifest.json
 	mv -f src/chrome.crx bin/chrome/coup_d_bungie.crx
 	rm src/chrome/xt.js src/chrome/main.js
