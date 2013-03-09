@@ -1,6 +1,8 @@
-VERSION = 6.0.15
+VERSION = 6.0.199
 
 all: firefox chrome opera
+
+all-x: chrome-x firefox-x opera-x
 
 firefox:
 	sed s/__VERSION__/$(VERSION)/ src/firefox/userscript.txt \
@@ -22,10 +24,28 @@ chrome:
 	rm manifest.json
 	
 opera:
-	mv -f src/opera/config.xml opera-config.xml
-	sed s/__VERSION__/$(VERSION)/ opera-config.xml > src/opera/config.xml
-	cat src/opera/userscript.txt src/opera/wrapheader.txt src/xt.js src/main.js src/opera/wrapfooter.txt > src/opera/includes/main.js
-	-rm bin/opera/coup_d_bungie.oex
-	cd src/opera & ; \
-	zip -r ../../bin/opera/coup_d_bungie.oex . -x userscript.txt
-	mv -f opera-config.xml src/opera/config.xml
+	cp src/opera/index.html bin/src/opera/index.html
+	sed s/__VERSION__/$(VERSION)/ src/opera/config.xml > bin/src/opera/config.xml
+	cat src/opera/userscript.txt src/opera/wrapheader.txt src/xt.js src/main.js src/opera/wrapfooter.txt > bin/src/opera/includes/main.js
+	cd bin/src/opera & ; \
+	zip -FSr ../../opera/coup_d_bungie.oex . -x userscript.txt
+	
+opera-x:
+	cp src/opera/index.html bin/src/opera/index.html
+	sed s/__VERSION__/$(VERSION)/ src/opera/config.xml > bin/src/opera/config.xml
+	cat src/opera/userscript.txt src/xt.js src/main.js > bin/src/opera/includes/main.js
+	cd bin/src/opera & ; \
+	zip -FSr ../../opera/coup_d_bungie.oex . -x userscript.txt
+	
+firefox-x:
+	sed s/__VERSION__/$(VERSION)/ src/firefox/userscript.txt \
+	| cat - src/xt.js src/main.js \
+	> bin/firefox/coup_d_bungie.user.js
+	
+chrome-x:
+	cp src/xt.js src/main.js bin/src/chrome
+	sed s/__VERSION__/$(VERSION)/ src/chrome/manifest.json > bin/src/chrome/manifest.json
+	chrome --pack-extension=$(CURDIR)/bin/src/chrome --pack-extension-key=$(CURDIR)/src/coup-6.pem
+	mv -f bin/src/chrome.crx bin/chrome/coup_d_bungie.crx
+	cd bin/src/chrome & ; \
+	zip -FSr ../../chrome/coup_d_bungie.zip .

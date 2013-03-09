@@ -32,7 +32,7 @@ var XT = (function()
     
     api.remove = function(name)
     {
-        localStorage.removeItem(name);
+        localStorage.removeItem(prefix + name);
     };
     
     api.set = function(name, value)
