@@ -1,4 +1,4 @@
-VERSION = 6.0.199
+VERSION = 6.1.1
 
 all: firefox chrome opera
 
